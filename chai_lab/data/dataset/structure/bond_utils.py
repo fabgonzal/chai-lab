@@ -104,6 +104,9 @@ def get_atom_covalent_bond_pairs_from_constraints(
                 assert torch.any(left_atoms_mask) and torch.any(right_atoms_mask)
 
                 # Find atoms matching on atom name
+                print([n for n in atom_ref_name])
+                print(constraint.atom_nameA)
+                print(constraint.atom_nameB)
                 left_name_mask = torch.tensor(
                     [n == constraint.atom_nameA for n in atom_ref_name],
                     dtype=torch.bool,
