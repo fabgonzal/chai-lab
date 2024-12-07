@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Chai Discovery, Inc.
 # Licensed under the Apache License, Version 2.0.
 # See the LICENSE file for details.
-
+import logging
 import torch
 from einops import rearrange
 from torch import Tensor
@@ -15,6 +15,10 @@ from chai_lab.data.parsing.restraints import (
 from chai_lab.model.utils import get_asym_id_from_subchain_id
 from chai_lab.utils.tensor_utils import string_to_tensorcode
 from chai_lab.utils.typing import Int, UInt8, typecheck
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 
 @typecheck
@@ -104,9 +108,9 @@ def get_atom_covalent_bond_pairs_from_constraints(
                 assert torch.any(left_atoms_mask) and torch.any(right_atoms_mask)
 
                 # Find atoms matching on atom name
-                print([n for n in atom_ref_name])
-                print(constraint.atom_nameA)
-                print(constraint.atom_nameB)
+                logger.info(",".join([n for n in atom_ref_name]))
+                logger.info(constraint.atom_nameA)
+                logger.info(constraint.atom_nameB)
                 left_name_mask = torch.tensor(
                     [n == constraint.atom_nameA for n in atom_ref_name],
                     dtype=torch.bool,
