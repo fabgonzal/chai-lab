@@ -25,6 +25,9 @@ from chai_lab.utils import paths
 from chai_lab.utils.pickle import TorchAntipickleAdapter
 from chai_lab.utils.timeout import timeout
 
+import hashlib
+import os
+
 # important to set this flag otherwise atom properties such as
 # "name" will be lost when pickling
 # See https://github.com/rdkit/rdkit/issues/1320
@@ -37,6 +40,7 @@ class RefConformerGenerator:
     def __init__(
         self,
         leaving_atoms_cache_file: str | None = None,
+        ligand_cache_dir = None
     ):
         """
         N.B. in almost all cases, you want to use RefConformerGenerator.make() rather
@@ -50,6 +54,10 @@ class RefConformerGenerator:
         # Mapping of molecule names to (atom_names, leaving_atoms); leaving atoms
         # correspond to True. See the following file for how this was constructed:
         # src/scripts/small_molecule_preprocess/leaving_atoms.py
+        if ligand_cache_dir[-1] != "/":
+            ligand_cache_dir+="/"
+        self.ligand_cache_dir = ligand_cache_dir
+        
         self.leaving_atoms: dict[str, tuple[list[str], list[bool]]] = dict()
         if leaving_atoms_cache_file is not None:
             self.leaving_atoms = antipickle.load(leaving_atoms_cache_file)
@@ -141,25 +149,31 @@ class RefConformerGenerator:
 
     def generate(self, smiles: str) -> ConformerData:
         """Generates a conformer for a ligand from its SMILES string."""
-        mol = Chem.MolFromSmiles(smiles)
-        assert mol is not None, f"Invalid smiles {smiles}"
-
-        mol_with_hs = Chem.AddHs(mol)
-
-        params = AllChem.ETKDGv3()
-        params.useSmallRingTorsions = True
-        params.randomSeed = 123
-        params.useChirality = True
-        # below params were added after facing 'Value Error: Bad Conformer id'
-        # https://github.com/rdkit/rdkit/issues/1433#issuecomment-305097888
-        params.maxAttempts = 10_000
-        params.useRandomCoords = True
-
-        AllChem.EmbedMultipleConfs(mol_with_hs, numConfs=1, params=params)
-        AllChem.RemoveHs(mol_with_hs)
-        for i, atom in enumerate(mol_with_hs.GetAtoms()):
-            new_name = atom.GetSymbol()+str(i+1)
-            atom.SetProp("name", new_name)
+        unk_flag = True
+        if self.ligand_cache_dir not None:
+            fname = self.ligand_cache_dir + hashlib.sha256(smiles.encode()).hexdigest() + ".pdb"
+            if  os.path.isfile(fname):
+                mol_with_hs = Chem.MolFromPDBFile(fname,removeHs=True,proximityBonding=False)
+                unk_flag = False
+        if unk_flag:
+            mol = Chem.MolFromSmiles(smiles)
+            assert mol is not None, f"Invalid smiles {smiles}"
+            mol_with_hs = Chem.AddHs(mol)
+            params = AllChem.ETKDGv3()
+            params.useSmallRingTorsions = True
+            params.randomSeed = 123
+            params.useChirality = True
+            # below params were added after facing 'Value Error: Bad Conformer id'
+            # https://github.com/rdkit/rdkit/issues/1433#issuecomment-305097888
+            params.maxAttempts = 10_000
+            params.useRandomCoords = True
+            AllChem.EmbedMultipleConfs(mol_with_hs, numConfs=1, params=params)
+            AllChem.RemoveHs(mol_with_hs)
+    
+            for i, atom in enumerate(mol_with_hs.GetAtoms()):
+                new_name = atom.GetSymbol()+str(i+1)
+                atom.SetProp("name", new_name)
+                
         retval = self._load_ref_conformer_from_rdkit(mol_with_hs)
         retval.atom_names = [a.upper() for a in retval.atom_names]
 
