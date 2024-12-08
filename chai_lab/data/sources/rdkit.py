@@ -176,7 +176,7 @@ class RefConformerGenerator:
                 atom.SetProp("name", new_name)
         else:
             for i, atom in enumerate(mol_with_hs.GetAtoms()):
-                atom.SetProp("name", atom.GetPDBResidueInfo().GetName())
+                atom.SetProp("name", atom.GetPDBResidueInfo().GetName().strip())
                 
         retval = self._load_ref_conformer_from_rdkit(mol_with_hs)
         retval.atom_names = [a.upper() for a in retval.atom_names]
