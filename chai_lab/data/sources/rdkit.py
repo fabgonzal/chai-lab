@@ -54,8 +54,9 @@ class RefConformerGenerator:
         # Mapping of molecule names to (atom_names, leaving_atoms); leaving atoms
         # correspond to True. See the following file for how this was constructed:
         # src/scripts/small_molecule_preprocess/leaving_atoms.py
-        if ligand_cache_dir[-1] != "/":
-            ligand_cache_dir+="/"
+        if ligand_cache_dir != None 
+            if ligand_cache_dir[-1] != "/":
+                ligand_cache_dir+="/"
         self.ligand_cache_dir = ligand_cache_dir
         
         self.leaving_atoms: dict[str, tuple[list[str], list[bool]]] = dict()
