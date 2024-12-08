@@ -158,9 +158,16 @@ class RefConformerGenerator:
         AllChem.EmbedMultipleConfs(mol_with_hs, numConfs=1, params=params)
         AllChem.RemoveHs(mol_with_hs)
         for i, atom in enumerate(mol_with_hs.GetAtoms()):
-            atom.SetProp("name", atom.GetSymbol()+str(i+1))
+            new_name = atom.GetSymbol()+str(i+1)
+            atom.SetProp("name", new_name)
         retval = self._load_ref_conformer_from_rdkit(mol_with_hs)
         retval.atom_names = [a.upper() for a in retval.atom_names]
+
+        with open("./log","w+") as file:
+            file.write("Atom names at point of creation\n")
+            for aname in retval.atom_names:
+                file.write(aname+" ")
+                
         return retval
 
 
