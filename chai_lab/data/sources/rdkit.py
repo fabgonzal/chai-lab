@@ -151,7 +151,7 @@ class RefConformerGenerator:
     def generate(self, smiles: str) -> ConformerData:
         """Generates a conformer for a ligand from its SMILES string."""
         unk_flag = True
-        if self.ligand_cache_dir not None:
+        if self.ligand_cache_dir != None:
             fname = self.ligand_cache_dir + hashlib.sha256(smiles.encode()).hexdigest() + ".pdb"
             if  os.path.isfile(fname):
                 mol_with_hs = Chem.MolFromPDBFile(fname,removeHs=True,proximityBonding=False)
